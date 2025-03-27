@@ -10,22 +10,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id        String  @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User?   @relation(fields: [authorId], references: [id])
-  authorId  String?
+model Tokens {
+  User_ID String @id @unique
+  tokens  String
+  user    User   @relation(fields: [User_ID], references: [user_ID], onDelete: Cascade)
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String?  @unique
-  createdAt DateTime @default(now()) @map(name: "created_at")
-  updatedAt DateTime @updatedAt @map(name: "updated_at")
-  posts     Post[]
+  user_ID         String         @id @default(uuid())
+  email           String         @unique
+  password        String?
+  role            String
+  feedbackName_ID String?
+  feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
+  student         Student?
+  faculty         Faculty?
+  tokens          Tokens?
+}
 
-  @@map(name: "users")
+model Student {
+  Student_ID      String         @id @default(uuid())
+  user_ID         String         @unique
+  PRN             String         @unique
+  branch          String
+  semester        Int
+  department      String
+  feedbackName_ID String?
+  feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
+  user            User           @relation(fields: [user_ID], references: [user_ID], onDelete: Cascade)
+  electives       Electives[]
+}
+
+model Faculty {
+  Faculty_ID      String            @id @default(uuid())
+  user_ID         String            @unique
+  department      String
+  feedbackName_ID String?
+  feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
+  user            User              @relation(fields: [user_ID], references: [user_ID], onDelete: Cascade)
+  facultySubjects Faculty_Subject[]
+}
+
+model Subject {
+  Subject_ID      String            @id @default(uuid())
+  name            String
+  type            String
+  feedbackName_ID String?
+  feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
+  facultySubjects Faculty_Subject[]
+  electives       Electives[]
+}
+
+model Faculty_Subject {
+  Faculty_ID String
+  Subject_ID String
+  batch      String
+
+  faculty Faculty @relation(fields: [Faculty_ID], references: [Faculty_ID], onDelete: Cascade)
+  subject Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
+
+  @@id([Faculty_ID, Subject_ID])
+}
+
+model Electives {
+  Student_ID String
+  Subject_ID String
+
+  student Student @relation(fields: [Student_ID], references: [Student_ID], onDelete: Cascade)
+  subject Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
+
+  @@id([Student_ID, Subject_ID])
+}
+
+model FeedBack_Name {
+  Feedback_Name_ID String      @id @default(uuid())
+  name             String
+  students         Student[]
+  faculties        Faculty[]
+  subjects         Subject[]
+  questions        Questions[]
+  User             User[]
+
+  @@map("feedback_name")
+}
+
+model Questions {
+  Question_ID String @id @default(uuid())
+  question    String
+  feedback_ID String
+
+  feedback FeedBack_Name @relation(fields: [feedback_ID], references: [Feedback_Name_ID], onDelete: Cascade)
 }
