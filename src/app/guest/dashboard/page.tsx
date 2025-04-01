@@ -1,12 +1,38 @@
 import React from "react";
 import Appbar from "../../components/Appbar";
+import background_login from "../../../../public/background_login.jpg";
+import curriculum from "../../../../public/curriculum.png";
+import Image from "next/image";
+import GiveFeedbackButton from "@/app/components/GiveFeedbackButton";
+import Footer from "@/app/components/Footer";
 
-export default function GuestFeedback() {
+export default function StudentDashboard() {
   return (
-    <div>
+    <div
+      className="min-h-svh bg-cover bg-center"
+      style={{ backgroundImage: `url(${background_login.src})` }}
+    >
       <Appbar />
-      <h1>Guest Feedback</h1>
-      <p>Welcome to the guest feedback page.</p>
+      <div>
+        <div className="flex flex-col align-middle items-center justify-center my-auto mx-auto p-16">
+          <div className="text-3xl text-white font-poppins font-light my-auto ">
+            Feedback Page
+          </div>
+          <div className="flex space-x-4 mt-4">
+            <div className="bg-gray-700 rounded-lg p-6 flex flex-col items-center space-y-6 max-w-lg">
+              <Image src={curriculum} alt="teacher" />
+              <div className="text-gray-200 text-center text-base font-poppins">
+                Curriculum Feedback
+              </div>
+              <div className="text-gray-200 text-center text-sm font-poppins">
+                Please provide feedback on the courses and curriculum structure.
+              </div>
+              <GiveFeedbackButton context="Curriculum Feedback" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
     </div>
   );
 }
