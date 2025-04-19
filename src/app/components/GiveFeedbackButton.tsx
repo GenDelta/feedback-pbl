@@ -22,7 +22,7 @@ const GiveFeedbackButton: React.FC<GiveFeedbackButtonProps> = ({ context }) => {
         router.push("/curriculum-feedback");
         break;
       case "Open Dashboard":
-        router.push("/faculty-dashboard");
+        router.push("/faculty/dashboard");
         break;
       default:
         break;
