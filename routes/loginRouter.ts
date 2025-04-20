@@ -9,6 +9,8 @@ router.post("/login", (req, res) => {
       res.redirect("/student/dashboard");
     } else if (email.includes("coordinator")) {
       res.redirect("/coordinator/dashboard");
+    } else if (email.includes("systemadmin")) {
+      res.redirect("/admin/dashboard");
     } else {
       res.redirect("/faculty/dashboard");
     }
