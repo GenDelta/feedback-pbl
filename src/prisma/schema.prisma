@@ -39,6 +39,7 @@ model Student {
   feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   user            User           @relation(fields: [user_ID], references: [user_ID], onDelete: Cascade)
   electives       Electives[]
+  feedbacks       Feedback[]     // Added relation to feedback
 }
 
 model Faculty {
@@ -49,6 +50,7 @@ model Faculty {
   feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   user            User              @relation(fields: [user_ID], references: [user_ID], onDelete: Cascade)
   facultySubjects Faculty_Subject[]
+  feedbacks       Feedback[]        // Added relation to feedback
 }
 
 model Subject {
@@ -59,15 +61,15 @@ model Subject {
   feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   facultySubjects Faculty_Subject[]
   electives       Electives[]
+  feedbacks       Feedback[]        // Added relation to feedback
 }
 
 model Faculty_Subject {
   Faculty_ID String
   Subject_ID String
   batch      String
-
-  faculty Faculty @relation(fields: [Faculty_ID], references: [Faculty_ID], onDelete: Cascade)
-  subject Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
+  faculty    Faculty @relation(fields: [Faculty_ID], references: [Faculty_ID], onDelete: Cascade)
+  subject    Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
 
   @@id([Faculty_ID, Subject_ID])
 }
@@ -75,9 +77,8 @@ model Faculty_Subject {
 model Electives {
   Student_ID String
   Subject_ID String
-
-  student Student @relation(fields: [Student_ID], references: [Student_ID], onDelete: Cascade)
-  subject Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
+  student    Student @relation(fields: [Student_ID], references: [Student_ID], onDelete: Cascade)
+  subject    Subject @relation(fields: [Subject_ID], references: [Subject_ID], onDelete: Cascade)
 
   @@id([Student_ID, Subject_ID])
 }
@@ -90,14 +91,36 @@ model FeedBack_Name {
   subjects         Subject[]
   questions        Questions[]
   User             User[]
+  feedbacks        Feedback[]  // Added relation to feedback
 
   @@map("feedback_name")
 }
 
 model Questions {
-  Question_ID String @id @default(uuid())
+  Question_ID String          @id @default(uuid())
   question    String
   feedback_ID String
+  feedback    FeedBack_Name   @relation(fields: [feedback_ID], references: [Feedback_Name_ID], onDelete: Cascade)
+  feedbacks   Feedback[]      // Added relation to feedback
+}
 
-  feedback FeedBack_Name @relation(fields: [feedback_ID], references: [Feedback_Name_ID], onDelete: Cascade)
+// New model for storing feedback responses
+model Feedback {
+  Feedback_ID      String        @id @default(uuid())
+  feedback_name_ID String
+  student_ID       String
+  faculty_ID       String
+  subject_ID       String
+  question_ID      String
+  answer           String        // Can store the answer value
+  timestamp        DateTime      @default(now())
+  
+  // Relations
+  feedbackName     FeedBack_Name @relation(fields: [feedback_name_ID], references: [Feedback_Name_ID], onDelete: Cascade)
+  student          Student       @relation(fields: [student_ID], references: [Student_ID], onDelete: Cascade)
+  faculty          Faculty       @relation(fields: [faculty_ID], references: [Faculty_ID], onDelete: Cascade)
+  subject          Subject       @relation(fields: [subject_ID], references: [Subject_ID], onDelete: Cascade)
+  question         Questions     @relation(fields: [question_ID], references: [Question_ID], onDelete: Cascade)
+
+  @@unique([student_ID, faculty_ID, subject_ID, question_ID, feedback_name_ID])
 }
