@@ -1,8 +1,18 @@
+import { useSession } from "next-auth/react";
 import background_login from "../../public/background_login.jpg";
 import LoginFooter from "./components/LoginFooter";
 import SignInButton from "./components/SignInButton";
+import { Redirector } from "./components/Redirector";
+import { auth } from "./api/auth/[...nextauth]/route";
 
-export default function Home() {
+export default async function Home() {
+
+  // const  session  = await auth();
+  // if (session?.user) {
+  //   return <Redirector />
+  // }
+  // console.log(session);
+
   return (
     <div
       className="min-h-screen bg-cover bg-center justify-center items-center flex"

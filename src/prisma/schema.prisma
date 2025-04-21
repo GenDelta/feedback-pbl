@@ -10,26 +10,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Tokens {
-  User_ID String @id @unique
-  tokens  String
-  user    User   @relation(fields: [User_ID], references: [id], onDelete: Cascade)
-}
-
 model User {
   id        String         @id @default(uuid())
+  name     String
   email           String         @unique
   password        String?
   emailVerified DateTime?  @map("email_verified")
   image         String?
-  role            String?
+  role            String  
   feedbackName_ID String?
   feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   student         Student?
   faculty         Faculty?
-  tokens          Tokens?
   accounts      Account[]
   sessions      Session[]
+
+  @@map("users")
 }
 
 model Student {

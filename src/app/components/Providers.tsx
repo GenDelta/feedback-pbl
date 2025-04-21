@@ -7,6 +7,8 @@ interface Props{
 }
 
 const Providers = (props:Props) => {
+    return <>{props.children}</>;
+
     return (
         <SessionProvider>{props.children}</SessionProvider>
     )
