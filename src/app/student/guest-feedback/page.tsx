@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
+import { signOut } from "next-auth/react";
 
 interface Question {
   id: string;
@@ -66,7 +67,7 @@ const CurriculumFeedbackPage = () => {
           id: "Q7",
           text: "How valuable was this guest lecture for your academic growth? ",
           type: "rating",
-          },
+        },
         {
           id: "Q8",
           text: "Would you recommend having more guest lectures in the curriculum? ",
@@ -77,7 +78,6 @@ const CurriculumFeedbackPage = () => {
           text: "Overall, how satisfied were you with the guest lecture? ",
           type: "rating",
         },
-        
       ];
 
       setQuestions(mockQuestions);
@@ -134,7 +134,7 @@ const CurriculumFeedbackPage = () => {
   };
 
   const handleLogout = () => {
-    router.push("/");
+    signOut();
   };
 
   return (
