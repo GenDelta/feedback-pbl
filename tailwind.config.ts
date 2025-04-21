@@ -11,6 +11,7 @@ export default {
       colors: {
         primary: {
           dark: "#202a36",
+          light: "#cdcdcd",
         },
         buttons: {
           primary: "#0151c4",

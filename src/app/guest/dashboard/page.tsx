@@ -19,12 +19,12 @@ export default function StudentDashboard() {
             Feedback Page
           </div>
           <div className="flex space-x-4 mt-4">
-            <div className="bg-gray-700 rounded-lg p-6 flex flex-col items-center space-y-6 max-w-lg">
+            <div className="bg-primary-light rounded-lg p-6 flex flex-col items-center space-y-6 max-w-lg bg-opacity-90">
               <Image src={curriculum} alt="teacher" />
-              <div className="text-gray-200 text-center text-base font-poppins">
+              <div className="text-primary-dark text-center text-xl font-poppins">
                 Curriculum Feedback
               </div>
-              <div className="text-gray-200 text-center text-sm font-poppins">
+              <div className="text-primary-dark text-center text-sm font-poppins">
                 Please provide feedback on the courses and curriculum structure.
               </div>
               <GiveFeedbackButton context="Guest Curriculum Feedback" />

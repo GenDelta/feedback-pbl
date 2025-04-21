@@ -20,36 +20,36 @@ export default function FacultyDashboard() {
             Faculty Page
           </div>
           <div className="flex space-x-8 mt-4">
-            <div className="bg-gray-700 rounded-lg p-8 flex flex-col items-center w-96 min-h-[28rem]">
+            <div className="bg-primary-light rounded-lg p-8 flex flex-col items-center w-96 min-h-[28rem] bg-opacity-90">
               <Image
                 src={dashboard}
                 alt="teacher"
-                width={300}
-                height={300}
+                width={800}
+                height={800}
                 className="mt-4"
               />
-              <div className="text-gray-200 text-center text-xl font-poppins my-3">
+              <div className="text-primary-dark text-center text-xl font-poppins my-3">
                 Dashboard
               </div>
-              <div className="text-gray-200 text-center text-sm font-poppins my-3 mb-6 max-w-[200px]">
+              <div className="text-primary-dark text-center text-sm font-poppins my-3 mb-6 max-w-[200px]">
                 View feedback given by
                 <br />
                 students
               </div>
               <GiveFeedbackButton context="Open Dashboard" />
             </div>
-            <div className="bg-gray-700 rounded-lg p-8 flex flex-col items-center w-96 min-h-[28rem]">
+            <div className="bg-primary-light rounded-lg p-8 flex flex-col items-center w-96 min-h-[28rem] bg-opacity-90">
               <Image
                 src={curriculum}
                 alt="teacher"
-                width={300}
-                height={300}
+                width={800}
+                height={800}
                 className="mt-4"
               />
-              <div className="text-gray-200 text-center text-xl font-poppins my-3">
+              <div className="text-primary-dark text-center text-xl font-poppins my-3">
                 Curriculum Feedback
               </div>
-              <div className="text-gray-200 text-center text-sm font-poppins my-3 mb-6">
+              <div className="text-primary-dark text-center text-sm font-poppins my-3 mb-6">
                 Please provide feedback on the courses and curriculum structure.
               </div>
               <GiveFeedbackButton context="Faculty Curriculum Feedback" />
