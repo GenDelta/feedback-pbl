@@ -52,7 +52,7 @@ export default function FacultyDashboard() {
               <div className="text-gray-200 text-center text-sm font-poppins my-3 mb-6">
                 Please provide feedback on the courses and curriculum structure.
               </div>
-              <GiveFeedbackButton context="Curriculum Feedback" />
+              <GiveFeedbackButton context="Faculty Curriculum Feedback" />
             </div>
           </div>
         </div>
