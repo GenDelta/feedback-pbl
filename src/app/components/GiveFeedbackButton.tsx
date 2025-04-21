@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 interface GiveFeedbackButtonProps {
   context:
     | "Faculty Feedback"
+    | "Guest Feedback"
     | "Faculty Curriculum Feedback"
     | "Student Curriculum Feedback"
     | "Guest Curriculum Feedback"
@@ -18,7 +19,10 @@ const GiveFeedbackButton: React.FC<GiveFeedbackButtonProps> = ({ context }) => {
   const handleClick = () => {
     switch (context) {
       case "Faculty Feedback":
-        router.push("/faculty-feedback");
+        router.push("/student/faculty-feedback");
+        break;
+      case "Guest Feedback":
+        router.push("/student/guest-feedback");
         break;
       case "Faculty Curriculum Feedback":
         router.push("/faculty/curriculum-feedback");
