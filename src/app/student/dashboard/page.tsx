@@ -49,7 +49,7 @@ export default function StudentDashboard() {
               <div className="text-gray-200 text-center text-sm font-poppins my-2 mb-5">
                 Please provide feedback on the courses and curriculum structure.
               </div>
-              <GiveFeedbackButton context="Curriculum Feedback" />
+              <GiveFeedbackButton context="Student Curriculum Feedback" />
             </div>
           </div>
         </div>
