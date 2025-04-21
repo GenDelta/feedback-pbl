@@ -5,6 +5,26 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
+// Reference: https://authjs.dev/getting-started/typescript#:~:text=use%20generics%3F-,Module%20Augmentation,-Auth.js%20libraries
+declare module "next-auth" {
+  /**
+   * Returned by `auth`, `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
+   */
+  interface Session {
+    user: {
+      /** The user's postal address. */
+      id: string;
+      role: string;
+      /**
+       * By default, TypeScript merges new interface properties and overwrites existing ones.
+       * In this case, the default session user properties will be overwritten,
+       * with the new ones defined above. To keep the default session user properties,
+       * you need to add them back into the newly declared interface.
+       */
+    } & DefaultSession["user"];
+  }
+}
+
 const config: NextAuthConfig = {
   session: { strategy: "jwt" },
   adapter: PrismaAdapter(prisma),

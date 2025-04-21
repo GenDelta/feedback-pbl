@@ -11,28 +11,18 @@ export const Redirector = () => {
     if (!session?.user) {
       return router.push("/");
     }
-    //@ts-expect-error
     if (session?.user.role === "guest") {
       return router.push("/guest/dashboard");
-    }
-    //@ts-expect-error
-    else if (session?.user.role === "student") {
+    } else if (session?.user.role === "student") {
       return router.push("/student/dashboard");
-    }
-    //@ts-expect-error
-    else if (session?.user.role === "coordinator") {
+    } else if (session?.user.role === "coordinator") {
       return router.push("/coordinator/dashboard");
-    }
-    //@ts-expect-error
-    else if (session?.user.role === "admin") {
+    } else if (session?.user.role === "admin") {
       return router.push("/admin/dashboard");
-    }
-    //@ts-expect-error
-    else if (session?.user.role === "faculty") {
+    } else if (session?.user.role === "faculty") {
       return router.push("/faculty/page");
     } else {
-      //@ts-expect-error
-      throw error("Invalid user role" + session?.user.role);
+      throw new Error("Invalid user role" + session?.user.role);
     }
   }, [session, router]);
   return <></>;
