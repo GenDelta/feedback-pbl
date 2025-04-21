@@ -1,11 +1,11 @@
 import prisma from "@/prisma/client";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth from "next-auth";
+import NextAuth, { DefaultSession, NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
-const { handlers, auth, signIn, signOut } = NextAuth({
+const config: NextAuthConfig = {
   session: { strategy: "jwt" },
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -80,16 +80,33 @@ const { handlers, auth, signIn, signOut } = NextAuth({
     async redirect({ baseUrl }) {
       return baseUrl;
     },
-    // session(params) {
-    //   return {
-    //     ...params.session,
-    //     user: {
-    //       ...params.session.user,
-    //       role: params.user.role,
-    //     },
-    //   };
-    // },
+    jwt: ({ token, user }) => {
+      if (user) {
+        const u = user as unknown as any;
+        return {
+          ...token,
+          id: u.id,
+          role: u.role,
+        };
+      }
+      return token;
+    },
+    session(params) {
+      return {
+        ...params.session,
+        user: {
+          ...params.session.user,
+          id: params.token.id as string,
+          role: params.token.role as string,
+        },
+      };
+    },
   },
-});
+};
 
-export { handlers as GET, handlers as POST, auth, signIn, signOut };
+export const {
+  handlers: { GET, POST },
+  auth,
+  signIn,
+  signOut,
+} = NextAuth(config);
