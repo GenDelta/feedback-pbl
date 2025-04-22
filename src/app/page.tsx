@@ -4,14 +4,13 @@ import LoginFooter from "./components/LoginFooter";
 import SignInButton from "./components/SignInButton";
 import { Redirector } from "./components/Redirector";
 import { auth } from "./api/auth/[...nextauth]/route";
+import prisma from "@/prisma/client";
 
 export default async function Home() {
-
-  // const  session  = await auth();
-  // if (session?.user) {
-  //   return <Redirector />
-  // }
-  // console.log(session);
+  const session = await auth();
+  if (session?.user) {
+    return <Redirector />;
+  }
 
   return (
     <div

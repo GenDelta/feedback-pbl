@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
+import { signOut } from "next-auth/react";
 
 interface Question {
   id: string;
@@ -113,7 +114,7 @@ const CurriculumFeedbackPage = () => {
   };
 
   const handleLogout = () => {
-    router.push("/");
+    signOut();
   };
 
   return (

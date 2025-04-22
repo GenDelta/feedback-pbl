@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 
 const Header: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -11,7 +12,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     //clear authentication tokens/cookies here
     setIsLoggedIn(false);
-    router.push("/");
+    signOut();
   };
 
   return (
