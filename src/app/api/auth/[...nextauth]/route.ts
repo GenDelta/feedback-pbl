@@ -82,7 +82,7 @@ const config: NextAuthConfig = {
 
         if (
           !user ||
-          !(await bcrypt.compare(String(credentials.password), user.password!))
+          !(await bcrypt.compare(String(credentials.password), user.password ?? ""))
         ) {
           return null;
         }
