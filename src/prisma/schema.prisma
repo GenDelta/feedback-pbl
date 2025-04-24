@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id        String         @id @default(uuid())
-  name     String
+  id              String         @id @default(uuid())
+  name            String
   email           String         @unique
   password        String?
-  emailVerified DateTime?  @map("email_verified")
-  image         String?
-  role            String  
+  emailVerified   DateTime?      @map("email_verified")
+  image           String?
+  branch          String? // Added branch field for user
+  role            String
   feedbackName_ID String?
   feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   student         Student?
   faculty         Faculty?
-  accounts      Account[]
-  sessions      Session[]
+  accounts        Account[]
+  sessions        Session[]
 
   @@map("users")
 }
@@ -39,7 +40,7 @@ model Student {
   feedbackName    FeedBack_Name? @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   user            User           @relation(fields: [user_ID], references: [id], onDelete: Cascade)
   electives       Electives[]
-  feedbacks       Feedback[]     // Added relation to feedback
+  feedbacks       Feedback[] // Added relation to feedback
 }
 
 model Faculty {
@@ -50,7 +51,7 @@ model Faculty {
   feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   user            User              @relation(fields: [user_ID], references: [id], onDelete: Cascade)
   facultySubjects Faculty_Subject[]
-  feedbacks       Feedback[]        // Added relation to feedback
+  feedbacks       Feedback[] // Added relation to feedback
 }
 
 model Subject {
@@ -61,7 +62,7 @@ model Subject {
   feedbackName    FeedBack_Name?    @relation(fields: [feedbackName_ID], references: [Feedback_Name_ID], onDelete: SetNull)
   facultySubjects Faculty_Subject[]
   electives       Electives[]
-  feedbacks       Feedback[]        // Added relation to feedback
+  feedbacks       Feedback[] // Added relation to feedback
 }
 
 model Faculty_Subject {
@@ -91,36 +92,36 @@ model FeedBack_Name {
   subjects         Subject[]
   questions        Questions[]
   User             User[]
-  feedbacks        Feedback[]  // Added relation to feedback
+  feedbacks        Feedback[] // Added relation to feedback
 
   @@map("feedback_name")
 }
 
 model Questions {
-  Question_ID String          @id @default(uuid())
+  Question_ID String        @id @default(uuid())
   question    String
   feedback_ID String
-  feedback    FeedBack_Name   @relation(fields: [feedback_ID], references: [Feedback_Name_ID], onDelete: Cascade)
-  feedbacks   Feedback[]      // Added relation to feedback
+  feedback    FeedBack_Name @relation(fields: [feedback_ID], references: [Feedback_Name_ID], onDelete: Cascade)
+  feedbacks   Feedback[] // Added relation to feedback
 }
 
 // New model for storing feedback responses
 model Feedback {
-  Feedback_ID      String        @id @default(uuid())
+  Feedback_ID      String   @id @default(uuid())
   feedback_name_ID String
   student_ID       String
   faculty_ID       String
   subject_ID       String
   question_ID      String
-  answer           String        // Can store the answer value
-  timestamp        DateTime      @default(now())
-  
+  answer           String // Can store the answer value
+  timestamp        DateTime @default(now())
+
   // Relations
-  feedbackName     FeedBack_Name @relation(fields: [feedback_name_ID], references: [Feedback_Name_ID], onDelete: Cascade)
-  student          Student       @relation(fields: [student_ID], references: [Student_ID], onDelete: Cascade)
-  faculty          Faculty       @relation(fields: [faculty_ID], references: [Faculty_ID], onDelete: Cascade)
-  subject          Subject       @relation(fields: [subject_ID], references: [Subject_ID], onDelete: Cascade)
-  question         Questions     @relation(fields: [question_ID], references: [Question_ID], onDelete: Cascade)
+  feedbackName FeedBack_Name @relation(fields: [feedback_name_ID], references: [Feedback_Name_ID], onDelete: Cascade)
+  student      Student       @relation(fields: [student_ID], references: [Student_ID], onDelete: Cascade)
+  faculty      Faculty       @relation(fields: [faculty_ID], references: [Faculty_ID], onDelete: Cascade)
+  subject      Subject       @relation(fields: [subject_ID], references: [Subject_ID], onDelete: Cascade)
+  question     Questions     @relation(fields: [question_ID], references: [Question_ID], onDelete: Cascade)
 
   @@unique([student_ID, faculty_ID, subject_ID, question_ID, feedback_name_ID])
 }
@@ -132,11 +133,11 @@ model Account {
   provider          String
   providerAccountId String   @map("provider_account_id")
   token_type        String?
-  refresh_token     String?  
-  access_token      String?  
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   scope             String?
-  id_token          String?  
+  id_token          String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction) // Added onUpdate constraint
@@ -148,8 +149,8 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   userId       String?  @map("user_id")
-  sessionToken String   @map("session_token") 
-  accessToken  String?  @map("access_token") 
+  sessionToken String   @map("session_token")
+  accessToken  String?  @map("access_token")
   expires      DateTime
   user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction) // Added onUpdate constraint
   createdAt    DateTime @default(now())

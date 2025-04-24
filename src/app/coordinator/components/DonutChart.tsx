@@ -3,11 +3,15 @@ import React from "react";
 interface DonutChartProps {
   title: string;
   submittedPercentage: number;
+  submittedCount?: number;
+  totalCount?: number;
 }
 
 const DonutChart: React.FC<DonutChartProps> = ({
   title,
   submittedPercentage,
+  submittedCount,
+  totalCount,
 }) => {
   const notSubmittedPercentage = 100 - submittedPercentage;
 
@@ -35,10 +39,15 @@ const DonutChart: React.FC<DonutChartProps> = ({
             ></div>
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-gray-800 rounded-full w-3/5 h-3/5 flex items-center justify-center">
+            <div className="bg-gray-800 rounded-full w-3/5 h-3/5 flex items-center justify-center flex-col">
               <span className="text-white text-xl font-bold">
                 {submittedPercentage}%
               </span>
+              {submittedCount !== undefined && totalCount !== undefined && (
+                <span className="text-gray-400 text-sm mt-1">
+                  {submittedCount} / {totalCount}
+                </span>
+              )}
             </div>
           </div>
         </div>
