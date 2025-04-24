@@ -112,8 +112,21 @@ const CurriculumFeedbackPage = () => {
     }
   };
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      // Call the logout API
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      router.push("/");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      router.push("/");
+    }
   };
 
   return (

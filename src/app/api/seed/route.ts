@@ -36,6 +36,24 @@ async function GET () {
         }
     })
 
+    const guest = await prisma.user.create({
+        data:{
+            name:"guest",
+            email: "guest@gmail.com",
+            password: bcrypt.hashSync("1234", 10),
+            role:"guest",
+        }
+    })
+
+    const admin = await prisma.user.create({
+        data:{
+            name:"admin",
+            email: "systemadmin@sitpune.edu.in",
+            password: bcrypt.hashSync("1234", 10),
+            role:"admin",
+        }
+    })
+
 
     await prisma.questions.createMany({
         data:[

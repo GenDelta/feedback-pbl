@@ -9,10 +9,23 @@ const Header: React.FC = () => {
   // Placeholder for faculty name - to be replaced with actual data from auth context/API
   const facultyName = "faculty@sitpune.edu.in";
 
-  const handleLogout = () => {
-    //clear authentication tokens/cookies here
-    setIsLoggedIn(false);
-    signOut();
+  const handleLogout = async () => {
+    try {
+      // Call the logout API
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      //clear authentication tokens/cookies here
+      setIsLoggedIn(false);
+      signOut();
+    } catch (error) {
+      console.error("Error during logout:", error);
+      signOut();
+    }
   };
 
   return (
@@ -36,4 +49,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header; 
+export default Header;

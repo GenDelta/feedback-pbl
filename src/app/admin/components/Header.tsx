@@ -6,10 +6,23 @@ const Header: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const router = useRouter();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     //clear authentication tokens/cookies here
-    setIsLoggedIn(false);
-    signOut();
+    try {
+      // Call the logout API
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      setIsLoggedIn(false);
+      signOut();
+    } catch (error) {
+      console.error("Error during logout:", error);
+      signOut();
+    }
   };
 
   return (
