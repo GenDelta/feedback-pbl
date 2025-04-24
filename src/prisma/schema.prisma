@@ -115,6 +115,7 @@ model Feedback {
   question_ID      String
   answer           String // Can store the answer value
   timestamp        DateTime @default(now())
+  isValid          Int      @default(0) // Adding isValid column with default value 0
 
   // Relations
   feedbackName FeedBack_Name @relation(fields: [feedback_name_ID], references: [Feedback_Name_ID], onDelete: Cascade)
@@ -168,4 +169,12 @@ model VerificationRequest {
   updatedAt  DateTime @updatedAt
 
   @@unique([identifier, token], map: "UQ_VerificationRequest_identifier_token")
+}
+
+// New model for storing student remarks
+model Remarks {
+  Remark_ID String   @id @default(uuid())
+  remark    String
+  branch    String
+  timestamp DateTime @default(now())
 }

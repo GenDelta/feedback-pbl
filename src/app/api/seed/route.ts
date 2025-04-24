@@ -4,8 +4,9 @@ import bcrypt from "bcryptjs";
 async function GET() {
   // Clear all tables first (in correct order to respect foreign key constraints)
   try {
-    console.log("Clearing all tables...");
+    console.log("Updating feedback isValid status...");
 
+    /* Commenting out all previous seeding operations
     // Clear tables with dependencies first
     await prisma.feedback.deleteMany({});
     await prisma.electives.deleteMany({});
@@ -653,14 +654,26 @@ async function GET() {
         }
       }
     }
+    */
+
+    // Single query to update all feedback records - set isValid to 1
+    const updateResult = await prisma.feedback.updateMany({
+      data: {
+        isValid: 1,
+      },
+    });
+
+    console.log(
+      `Updated ${updateResult.count} feedback records. Set isValid = 1 for all records.`
+    );
 
     return new Response(
-      "Database cleared and seeded with comprehensive data successfully"
+      `Successfully updated isValid field for ${updateResult.count} feedback records.`
     );
   } catch (error: any) {
-    console.error("Error in seed operation:", error);
+    console.error("Error in update operation:", error);
     return new Response(
-      `Error in seed operation: ${error?.message || "Unknown error"}`,
+      `Error in update operation: ${error?.message || "Unknown error"}`,
       { status: 500 }
     );
   }
