@@ -20,11 +20,11 @@ const FacultyDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="flex flex-col min-h-screen bg-gray-900">
       <Header />
-      <div className="flex min-h-screen">
+      <div className="flex flex-grow">
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <div className="flex-1 p-8">{renderContent()}</div>
+        <div className="flex-1 p-8 overflow-auto pb-20">{renderContent()}</div>
       </div>
       <Footer />
     </div>
