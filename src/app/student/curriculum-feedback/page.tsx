@@ -4,12 +4,13 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
 import { signOut } from "next-auth/react";
-
-interface Question {
-  id: string;
-  text: string;
-  type: "rating" | "text";
-}
+import {
+  getCurrentStudentInfo,
+  getCurriculumFeedbackQuestions,
+  hasStudentSubmittedFeedback,
+  submitGeneralFeedback,
+  Question,
+} from "../actions/studentActions";
 
 type RatingValue = number | null;
 type TextValue = string;
@@ -18,60 +19,82 @@ type Responses = Record<string, ResponseValue>;
 
 const CurriculumFeedbackPage = () => {
   const [studentName, setStudentName] = useState<string>("");
+  const [studentId, setStudentId] = useState<string>("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [responses, setResponses] = useState<Responses>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [alreadySubmitted, setAlreadySubmitted] = useState<boolean>(false);
+  const [formComplete, setFormComplete] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Mock fetch student name - Replace with actual API call
-    const fetchStudentName = async () => {
-      // Replace with an actual API call to get the logged in faculty's information
-      setStudentName("Ankush Dutta");
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Get student info
+        const studentInfo = await getCurrentStudentInfo();
+        if (studentInfo) {
+          setStudentName(studentInfo.name);
+          setStudentId(studentInfo.id);
+
+          // Check if student has already submitted curriculum feedback
+          const submitted = await hasStudentSubmittedFeedback(
+            studentInfo.id,
+            "Curriculum Feedback 2023-24" // Updated to match database
+          );
+
+          setAlreadySubmitted(submitted);
+
+          if (submitted) {
+            setLoading(false);
+            return; // Exit early if already submitted
+          }
+        }
+
+        // Get curriculum feedback questions
+        const questionsData = await getCurriculumFeedbackQuestions();
+        setQuestions(questionsData);
+
+        // Initialize responses
+        const initialResponses: Responses = {};
+        questionsData.forEach((question) => {
+          initialResponses[question.id] =
+            question.type === "rating" ? null : "";
+        });
+        setResponses(initialResponses);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Mock fetch questions - Replace with actual API call
-    const fetchQuestions = async () => {
-      // Replace with an actual database query
-      const mockQuestions: Question[] = [
-        {
-          id: "Q1",
-          text: "I am given enough freedom to contribute my ideas on curriculum design and development.",
-          type: "rating",
-        },
-        {
-          id: "Q2",
-          text: "The faculty members/teachers are supported with adequate learning resources",
-          type: "rating",
-        },
-        {
-          id: "Q3",
-          text: "The faculty members/teachers are encouraged to establish linkages with Industry.",
-          type: "rating",
-        },
-        {
-          id: "Q4",
-          text: "The syllabus is relevant and adequate in terms of scope, depth, and choice to help develop the required competencies amongst students",
-          type: "rating",
-        },
-        {
-          id: "Q5",
-          text: "Would you recommend any new course/topic to be added in the program structure?",
-          type: "text",
-        },
-      ];
-
-      setQuestions(mockQuestions);
-
-      const initialResponses: Record<string, any> = {};
-      mockQuestions.forEach((question) => {
-        initialResponses[question.id] = question.type === "rating" ? null : "";
-      });
-      setResponses(initialResponses);
-    };
-
-    fetchStudentName();
-    fetchQuestions();
+    fetchData();
   }, []);
+
+  // Add useEffect to check form completion status whenever responses change
+  useEffect(() => {
+    if (Object.keys(responses).length === 0 || questions.length === 0) {
+      setFormComplete(false);
+      return;
+    }
+
+    // Check if all questions have been answered
+    const unansweredQuestions = questions.filter((question) => {
+      const response = responses[question.id];
+      if (question.type === "rating") {
+        return response === null || response === undefined;
+      } else {
+        return (
+          !response || (typeof response === "string" && response.trim() === "")
+        );
+      }
+    });
+
+    setFormComplete(unansweredQuestions.length === 0);
+  }, [responses, questions]);
 
   const handleRatingChange = (questionId: string, rating: number) => {
     setResponses((prev) => ({
@@ -91,7 +114,11 @@ const CurriculumFeedbackPage = () => {
     e.preventDefault();
 
     const unansweredQuestions = Object.entries(responses).filter(
-      ([_, value]) => value === null || value === ""
+      ([key, value]) =>
+        (questions.find((q) => q.id === key)?.type === "rating" &&
+          value === null) ||
+        (questions.find((q) => q.id === key)?.type === "text" &&
+          (!value || value === ""))
     );
 
     if (unansweredQuestions.length > 0) {
@@ -99,17 +126,37 @@ const CurriculumFeedbackPage = () => {
       return;
     }
 
-    // Replace with an actual API call to submit feedback
-    console.log("Submitting feedback:", responses);
-
     try {
-      // Mock API call
-      // await submitFeedback(responses);
-      alert("Feedback submitted successfully!");
-      router.push("/student/dashboard"); // Redirect to dashboard after submission
+      setSubmitting(true);
+
+      // Process data for submission - remove any null values
+      const processedResponses: Record<string, number | string> = {};
+
+      // Convert all responses to non-null values for submission
+      Object.entries(responses).forEach(([key, value]) => {
+        if (value !== null) {
+          processedResponses[key] = value;
+        }
+      });
+
+      // Submit feedback - update the feedback type name
+      const result = await submitGeneralFeedback(
+        studentId,
+        "Curriculum Feedback 2023-24", // Updated to match database
+        processedResponses
+      );
+
+      if (result) {
+        // Redirect to thank you page on success
+        router.push("/thankyou");
+      } else {
+        alert("Failed to submit feedback. Please try again.");
+        setSubmitting(false);
+      }
     } catch (error) {
       console.error("Error submitting feedback:", error);
-      alert("Failed to submit feedback. Please try again.");
+      alert("An error occurred while submitting feedback.");
+      setSubmitting(false);
     }
   };
 
@@ -129,6 +176,70 @@ const CurriculumFeedbackPage = () => {
       signOut();
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-800 text-white flex items-center justify-center">
+        <div className="text-xl">Loading feedback form...</div>
+      </div>
+    );
+  }
+
+  if (alreadySubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-800 text-white p-6 flex flex-col relative">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleLogout}
+            className="bg-[#f03e65] hover:bg-[#d03050] text-white py-2 px-4 rounded transition-colors duration-200"
+          >
+            Logout
+          </button>
+        </div>
+
+        <div className="max-w-4xl mx-auto w-full flex-grow flex items-center justify-center">
+          <div className="bg-gray-700 p-8 rounded-lg text-center">
+            <div className="bg-yellow-600 text-white p-4 rounded-md mb-4">
+              <h3 className="text-xl font-bold mb-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 inline mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                Already Submitted
+              </h3>
+              <p>You have already submitted curriculum feedback.</p>
+            </div>
+
+            <h2 className="text-2xl font-semibold mb-4">No Pending Feedback</h2>
+            <p className="mb-6">
+              Thank you for your participation. Your feedback has been recorded
+              successfully.
+            </p>
+            <button
+              onClick={() => router.push("/student/dashboard")}
+              className="bg-[#f03e65] hover:bg-[#d03050] text-white font-bold py-2 px-8 rounded"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        </div>
+
+        <footer className="absolute bottom-0 left-0 w-full">
+          <Footer />
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-800 text-white p-6 flex flex-col relative">
@@ -160,7 +271,7 @@ const CurriculumFeedbackPage = () => {
               <div>1-Strongly Disagree</div>
             </div>
 
-            {questions.map((question) => (
+            {questions.map((question: Question) => (
               <div key={question.id} className="mb-6">
                 <p className="mb-2 text-gray-800">
                   {question.id}) {question.text}
@@ -203,9 +314,14 @@ const CurriculumFeedbackPage = () => {
             <div className="flex justify-center mt-8">
               <button
                 type="submit"
-                className="bg-[#f03e65] hover:bg-[#d03050] text-white font-bold py-2 px-8 rounded"
+                disabled={submitting || !formComplete}
+                className="bg-[#f03e65] hover:bg-[#d03050] text-white font-bold py-2 px-8 rounded disabled:opacity-50"
               >
-                Submit Feedback
+                {submitting
+                  ? "Submitting..."
+                  : formComplete
+                  ? "Submit Feedback"
+                  : "Please Complete All Questions"}
               </button>
             </div>
           </form>
