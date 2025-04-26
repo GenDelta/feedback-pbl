@@ -129,7 +129,11 @@ const FacultyFeedbackPage = () => {
     if (showRemarks) return true;
 
     // For regular question slides, check if all ratings are filled
-    return Object.values(currentResponses).every((value) => value !== null);
+    return Object.entries(currentResponses).every(([questionId, value]) => {
+      // Find the question to check its type
+      const question = questions.find((q) => q.id === questionId);
+      return question?.type === "rating" ? value !== null : true;
+    });
   };
 
   const handleNext = () => {
@@ -159,13 +163,36 @@ const FacultyFeedbackPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if all slides are complete
-    const incompleteSlides = Object.values(allResponses).some((responses) =>
-      Object.values(responses).some((value) => value === null)
-    );
+    // Comprehensive check for any incomplete slides
+    const incompleteSlides = Object.keys(allResponses).some((slideIndex) => {
+      const slideResponses = allResponses[Number(slideIndex)];
+      return Object.entries(slideResponses).some(([questionId, value]) => {
+        // Find the question to check its type
+        const question = questions.find((q) => q.id === questionId);
+        return question?.type === "rating" && value === null;
+      });
+    });
 
     if (incompleteSlides) {
-      alert("Please fill in all feedback before submitting.");
+      alert(
+        "Please complete all questions for all faculty members before submitting."
+      );
+      // Go back to first incomplete slide
+      for (let i = 0; i < facultySubjects.length; i++) {
+        const slideResponses = allResponses[i];
+        const isIncomplete = Object.entries(slideResponses).some(
+          ([questionId, value]) => {
+            const question = questions.find((q) => q.id === questionId);
+            return question?.type === "rating" && value === null;
+          }
+        );
+
+        if (isIncomplete) {
+          setCurrentIndex(i);
+          setShowRemarks(false);
+          return;
+        }
+      }
       return;
     }
 
@@ -378,7 +405,7 @@ const FacultyFeedbackPage = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={handlePrevious}
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-lg transition-colors duration-200 ${
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 ${
               currentIndex === 0 && !showRemarks ? "invisible" : ""
             }`}
           >
