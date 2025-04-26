@@ -109,9 +109,9 @@ model Questions {
 model Feedback {
   Feedback_ID      String   @id @default(uuid())
   feedback_name_ID String
-  student_ID       String
-  faculty_ID       String? // Made nullable with "?"
-  subject_ID       String? // Made nullable with "?"
+  student_ID       String? // Changed to nullable
+  faculty_ID       String?
+  subject_ID       String?
   question_ID      String
   answer           String
   timestamp        DateTime @default(now())
@@ -119,9 +119,9 @@ model Feedback {
 
   // Relations
   feedbackName FeedBack_Name @relation(fields: [feedback_name_ID], references: [Feedback_Name_ID], onDelete: Cascade)
-  student      Student       @relation(fields: [student_ID], references: [Student_ID], onDelete: Cascade)
-  faculty      Faculty?      @relation(fields: [faculty_ID], references: [Faculty_ID], onDelete: SetNull) // Changed to optional relation
-  subject      Subject?      @relation(fields: [subject_ID], references: [Subject_ID], onDelete: SetNull) // Changed to optional relation
+  student      Student?      @relation(fields: [student_ID], references: [Student_ID], onDelete: SetNull) // Changed to optional relation
+  faculty      Faculty?      @relation(fields: [faculty_ID], references: [Faculty_ID], onDelete: SetNull)
+  subject      Subject?      @relation(fields: [subject_ID], references: [Subject_ID], onDelete: SetNull)
   question     Questions     @relation(fields: [question_ID], references: [Question_ID], onDelete: Cascade)
 
   @@unique([student_ID, faculty_ID, subject_ID, question_ID, feedback_name_ID])

@@ -1,16 +1,61 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Footer from "@/app/components/Footer";
 import { signOut } from "next-auth/react";
 
-const ThankYouPage = () => {
+// Function to determine the user role and dashboard URL
+async function getUserRole(): Promise<{ role: string; dashboardUrl: string }> {
+  try {
+    // Try to fetch the session info from the server
+    const response = await fetch("/api/auth/session");
+    const sessionData = await response.json();
+
+    if (sessionData?.user?.role) {
+      const role = sessionData.user.role;
+
+      // Set appropriate dashboard URL based on role
+      switch (role) {
+        case "student":
+          return { role, dashboardUrl: "/student/dashboard" };
+        case "faculty":
+          return { role, dashboardUrl: "/faculty/page" };
+        case "coordinator":
+          return { role, dashboardUrl: "/coordinator/dashboard" };
+        case "admin":
+          return { role, dashboardUrl: "/admin/dashboard" };
+        case "guest":
+          return { role, dashboardUrl: "/guest/dashboard" };
+        default:
+          return { role, dashboardUrl: "/" };
+      }
+    }
+
+    // Default to home page if role not found
+    return { role: "unknown", dashboardUrl: "/" };
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return { role: "unknown", dashboardUrl: "/" };
+  }
+}
+
+export default function ThankYouPage() {
   const router = useRouter();
+  const [dashboardUrl, setDashboardUrl] = useState<string>("/");
+
+  useEffect(() => {
+    // Get the user role and set the dashboard URL
+    const getRole = async () => {
+      const { dashboardUrl } = await getUserRole();
+      setDashboardUrl(dashboardUrl);
+    };
+
+    getRole();
+  }, []);
 
   const handleBackToDashboard = () => {
-    router.push("/student/dashboard");
+    router.push(dashboardUrl);
   };
 
   const handleLogout = async () => {
@@ -29,10 +74,10 @@ const ThankYouPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#aa6b95]">
-      <div className="flex-grow flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl p-8 max-w-3xl w-full relative">
-          <div className="flex flex-col md:flex-row items-center gap-8">
+    <div className="min-h-screen bg-[#aa6b95] flex flex-col">
+      <div className="flex-grow flex items-center justify-center p-6">
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden max-w-4xl w-full">
+          <div className="p-8 md:p-12 flex flex-col md:flex-row items-center">
             <div className="w-full md:w-1/2">
               <Image
                 src="/FeedbackThankYouDesign.1.svg"
@@ -68,12 +113,6 @@ const ThankYouPage = () => {
           </div>
         </div>
       </div>
-
-      <footer>
-        <Footer />
-      </footer>
     </div>
   );
-};
-
-export default ThankYouPage;
+}
