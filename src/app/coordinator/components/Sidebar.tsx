@@ -1,4 +1,5 @@
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   activeTab: string;
@@ -6,6 +7,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const router = useRouter();
+
   const getTabStyle = (tabName: string) => {
     const baseStyle =
       "px-4 py-3 flex items-center space-x-4 rounded-md cursor-pointer transition-all duration-200";
@@ -131,7 +134,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
             <span>Analytics</span>
           </div>
 
-          <button className="w-full mt-8 bg-blue-500 hover:bg-blue-600 text-white rounded-lg py-3 flex items-center justify-center space-x-2 transition duration-300">
+          <button
+            onClick={() => router.push("/coordinator/viewsubjects")}
+            className="w-full mt-8 bg-blue-500 hover:bg-blue-600 text-white rounded-lg py-3 flex items-center justify-center space-x-2 transition duration-300"
+          >
             <span>View Subject List</span>
           </button>
         </nav>
