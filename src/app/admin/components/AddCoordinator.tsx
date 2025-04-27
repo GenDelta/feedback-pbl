@@ -1,40 +1,45 @@
+"use client";
+
 import React, { useState } from "react";
+import { addCoordinator } from "../actions/adminActions";
 
 const AddCoordinator: React.FC = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [branch, setBranch] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
 
     // Basic validation
-    if (!email || !password || !confirmPassword || !branch) {
-      setError("All fields are required");
+    if (!email || !branch) {
+      setError("Please fill in all fields");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const result = await addCoordinator(email, branch);
+
+      if (result.success) {
+        setSuccess(result.message);
+        // Reset form
+        setEmail("");
+        setBranch("");
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      console.error("Error adding coordinator:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    // In a real app, this would call an API to add the coordinator
-    console.log("Adding coordinator:", { email, password, branch });
-
-    // Simulate successful addition
-    setSuccess("Coordinator added successfully");
-
-    // Reset form
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
-    setBranch("");
   };
 
   return (
@@ -65,32 +70,7 @@ const AddCoordinator: React.FC = () => {
             placeholder="example@sitpune.edu.in"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-white mb-2">
-            Enter Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            className="w-full p-3 bg-white rounded"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="confirmPassword" className="block text-white mb-2">
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            className="w-full p-3 bg-white rounded"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
           />
         </div>
 
@@ -105,14 +85,18 @@ const AddCoordinator: React.FC = () => {
             placeholder="Branch"
             value={branch}
             onChange={(e) => setBranch(e.target.value)}
+            disabled={loading}
           />
         </div>
 
         <button
           type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded transition duration-300"
+          className={`${
+            loading ? "bg-gray-500" : "bg-blue-500 hover:bg-blue-600"
+          } text-white font-medium py-3 px-6 rounded transition duration-300`}
+          disabled={loading}
         >
-          Add Coordinator
+          {loading ? "Adding..." : "Add Coordinator"}
         </button>
       </form>
     </div>
