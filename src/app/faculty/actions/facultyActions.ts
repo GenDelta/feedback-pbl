@@ -602,3 +602,20 @@ export async function getAdditionalFeedback(facultyId: string): Promise<{
     return { feedbackData: [], batches: [], branches: [], subjects: [] };
   }
 }
+
+// Add a new function to check dashboard visibility
+export async function isFacultyDashboardVisible(): Promise<boolean> {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT State FROM Visibility_State WHERE Visibility_Name = 'facultyDashboard'
+    `;
+
+    if (Array.isArray(result) && result.length > 0) {
+      return result[0].State === 1;
+    }
+    return true; // Default to visible if no setting found
+  } catch (error) {
+    console.error("Error checking faculty dashboard visibility:", error);
+    return true; // Default to visible in case of error
+  }
+}

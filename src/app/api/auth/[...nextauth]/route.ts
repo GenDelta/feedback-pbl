@@ -23,6 +23,11 @@ declare module "next-auth" {
        */
     } & DefaultSession["user"];
   }
+
+  // Add role to the User type
+  interface User {
+    role?: string;
+  }
 }
 
 const config: NextAuthConfig = {
@@ -70,23 +75,75 @@ const config: NextAuthConfig = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        console.log("🔐 Credentials authorize starting...");
         if (!credentials?.email || !credentials.password) {
+          console.log("❌ Missing credentials");
           return null;
         }
 
+        console.log(`🔍 Looking up user with email: ${credentials.email}`);
         const user = await prisma.user.findUnique({
           where: {
             email: String(credentials.email),
           },
         });
 
-        if (
-          !user ||
-          !(await bcrypt.compare(String(credentials.password), user.password ?? ""))
-        ) {
+        if (!user) {
+          console.log("❌ User not found");
           return null;
         }
 
+        console.log(`✅ User found: ${user.name}, Role: ${user.role}`);
+        
+        const passwordValid = await bcrypt.compare(
+          String(credentials.password), 
+          user.password ?? ""
+        );
+        
+        if (!passwordValid) {
+          console.log("❌ Password invalid");
+          return null;
+        }
+        
+        console.log("✅ Password valid");
+
+        // Check visibility settings for students and faculty
+        if (user.role === "student" || user.role === "faculty") {
+          const visibilityName = user.role === "student" ? "studentLogin" : "facultyLogin";
+          console.log(`🔒 Checking ${visibilityName} visibility for ${user.role}`);
+          
+          try {
+            // Use raw query to check visibility state
+            console.log(`🔍 Executing query for ${visibilityName}`);
+            const visibilityResult = await prisma.$queryRaw`
+              SELECT State FROM Visibility_State WHERE Visibility_Name = ${visibilityName}
+            `;
+            
+            console.log(`📊 Visibility result:`, visibilityResult);
+            
+            const visibility = Array.isArray(visibilityResult) && visibilityResult.length > 0 
+              ? visibilityResult[0] 
+              : null;
+            
+            // If visibility state is 0 or not found, deny login
+            if (!visibility) {
+              console.log(`❌ No visibility setting found for ${visibilityName}`);
+              return null;
+            }
+            
+            if (visibility.State === 0) {
+              console.log(`🚫 ${user.role} login denied: ${visibilityName} is disabled (State=0)`);
+              return null;
+            }
+            
+            console.log(`✅ ${visibilityName} is enabled (State=1)`);
+          } catch (error) {
+            console.error(`❌ Error checking ${user.role} login visibility:`, error);
+            return null;
+          }
+        }
+
+        console.log(`🔓 Authorizing ${user.role}: ${user.name}`);
         return {
           id: user.id,
           email: user.email,
@@ -97,6 +154,90 @@ const config: NextAuthConfig = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      console.log(`🔑 SignIn callback for ${account?.provider} provider`);
+      console.log(`👤 User attempting login:`, { 
+        name: user.name,
+        email: user.email,
+        role: user.role 
+      });
+      
+      // Get user role
+      const role = user.role;
+      console.log(`👑 User role: ${role}`);
+      
+      // If user is a student, check studentLogin visibility
+      if (role === "student") {
+        console.log("🎓 Student login attempt - checking visibility");
+        try {
+          // Use raw query to check visibility state
+          console.log("🔍 Executing query for studentLogin visibility");
+          const visibilityResult = await prisma.$queryRaw`
+            SELECT State FROM Visibility_State WHERE Visibility_Name = 'studentLogin'
+          `;
+          
+          console.log("📊 Student visibility result:", visibilityResult);
+          
+          const visibility = Array.isArray(visibilityResult) && visibilityResult.length > 0 
+            ? visibilityResult[0] 
+            : null;
+          
+          // If visibility state is 0 or not found, deny login
+          if (!visibility) {
+            console.log("❌ No visibility setting found for studentLogin");
+            return false;
+          }
+          
+          if (visibility.State === 0) {
+            console.log("🚫 Student login denied: studentLogin is disabled (State=0)");
+            return false;
+          }
+          
+          console.log("✅ Student login is enabled (State=1)");
+        } catch (error) {
+          console.error("❌ Error checking student login visibility:", error);
+          return false;
+        }
+      }
+      
+      // If user is a faculty, check facultyLogin visibility
+      if (role === "faculty") {
+        console.log("👨‍🏫 Faculty login attempt - checking visibility");
+        try {
+          // Use raw query to check visibility state
+          console.log("🔍 Executing query for facultyLogin visibility");
+          const visibilityResult = await prisma.$queryRaw`
+            SELECT State FROM Visibility_State WHERE Visibility_Name = 'facultyLogin'
+          `;
+          
+          console.log("📊 Faculty visibility result:", visibilityResult);
+          
+          const visibility = Array.isArray(visibilityResult) && visibilityResult.length > 0 
+            ? visibilityResult[0] 
+            : null;
+          
+          // If visibility state is 0 or not found, deny login
+          if (!visibility) {
+            console.log("❌ No visibility setting found for facultyLogin");
+            return false;
+          }
+          
+          if (visibility.State === 0) {
+            console.log("🚫 Faculty login denied: facultyLogin is disabled (State=0)");
+            return false;
+          }
+          
+          console.log("✅ Faculty login is enabled (State=1)");
+        } catch (error) {
+          console.error("❌ Error checking faculty login visibility:", error);
+          return false;
+        }
+      }
+      
+      // For all other roles (admin, coordinator, guest), allow login
+      console.log(`✅ Login allowed for ${role}`);
+      return true;
+    },
     async redirect({ baseUrl }) {
       return baseUrl;
     },

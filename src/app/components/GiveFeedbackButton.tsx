@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { isFacultyDashboardVisible } from "../faculty/actions/facultyActions";
 
 interface GiveFeedbackButtonProps {
   context:
@@ -15,6 +16,26 @@ interface GiveFeedbackButtonProps {
 
 const GiveFeedbackButton: React.FC<GiveFeedbackButtonProps> = ({ context }) => {
   const router = useRouter();
+  const [isDashboardEnabled, setIsDashboardEnabled] = useState<boolean | null>(
+    null
+  );
+
+  // Check dashboard visibility state if this is a dashboard button
+  useEffect(() => {
+    if (context === "Open Dashboard") {
+      const checkDashboardVisibility = async () => {
+        try {
+          const isVisible = await isFacultyDashboardVisible();
+          setIsDashboardEnabled(isVisible);
+        } catch (error) {
+          console.error("Error checking dashboard visibility:", error);
+          setIsDashboardEnabled(true); // Default to enabled on error
+        }
+      };
+
+      checkDashboardVisibility();
+    }
+  }, [context]);
 
   const handleClick = () => {
     switch (context) {
@@ -34,7 +55,12 @@ const GiveFeedbackButton: React.FC<GiveFeedbackButtonProps> = ({ context }) => {
         router.push("/guest/curriculum-feedback");
         break;
       case "Open Dashboard":
-        router.push("/faculty/dashboard");
+        // Check dashboard state and route accordingly
+        if (isDashboardEnabled === false) {
+          router.push("/faculty/dashboard-disabled");
+        } else {
+          router.push("/faculty/dashboard");
+        }
         break;
       default:
         break;

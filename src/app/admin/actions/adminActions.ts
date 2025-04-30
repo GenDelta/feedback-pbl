@@ -110,3 +110,65 @@ export async function deleteCoordinator(
     return { success: false, message: "Failed to remove coordinator" };
   }
 }
+
+/**
+ * Gets the current visibility state for a specific feature
+ */
+export async function getVisibilityState(name: string): Promise<number> {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT State FROM Visibility_State WHERE Visibility_Name = ${name}
+    `;
+
+    // Return the state if found, otherwise default to 1 (visible)
+    if (Array.isArray(result) && result.length > 0) {
+      return result[0].State;
+    }
+    return 1;
+  } catch (error) {
+    console.error(`Error fetching visibility state for ${name}:`, error);
+    return 1; // Default to visible in case of error
+  }
+}
+
+/**
+ * Updates the visibility state for a specific feature
+ */
+export async function updateVisibilityState(
+  name: string,
+  state: number
+): Promise<boolean> {
+  try {
+    await prisma.$executeRaw`
+      UPDATE Visibility_State 
+      SET State = ${state}
+      WHERE Visibility_Name = ${name}
+    `;
+
+    return true;
+  } catch (error) {
+    console.error(`Error updating visibility state for ${name}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Gets all visibility states
+ */
+export async function getAllVisibilityStates(): Promise<
+  { name: string; state: number }[]
+> {
+  try {
+    const result = await prisma.$queryRaw`
+      SELECT Visibility_Name as name, State as state FROM Visibility_State
+    `;
+
+    if (Array.isArray(result)) {
+      return result as { name: string; state: number }[];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching all visibility states:", error);
+    return [];
+  }
+}

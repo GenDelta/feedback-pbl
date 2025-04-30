@@ -27,12 +27,12 @@ const TeacherManager: React.FC = () => {
           iconSrc="/UploadIcon.svg"
           iconAlt="Upload"
         />
-        <DownloadCard
+        {/* <DownloadCard
           title="Disable"
           description="Turn the teacher feedback visibility ON or OFF"
           iconSrc="/DisableIcon.svg"
           iconAlt="Disable"
-        />
+        /> */}
       </div>
     </div>
   );

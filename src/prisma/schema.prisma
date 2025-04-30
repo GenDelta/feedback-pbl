@@ -178,3 +178,9 @@ model Remarks {
   branch    String
   timestamp DateTime @default(now())
 }
+
+// New model for visibility control
+model Visibility_State {
+  Visibility_Name String @id
+  State           Int    @default(1) // 1 for visible, 0 for denied
+}

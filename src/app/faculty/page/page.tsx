@@ -1,13 +1,93 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Appbar from "../../components/Appbar";
 import background_login from "../../../../public/background_login.jpg";
 import curriculum from "../../../../public/curriculum.png";
 import dashboard from "../../../../public/dashboard.png";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import GiveFeedbackButton from "@/app/components/GiveFeedbackButton";
 import Footer from "@/app/components/Footer";
+import { isFacultyDashboardVisible } from "../actions/facultyActions";
+
+// Define a key for localStorage
+const DASHBOARD_CHECK_KEY = "dashboard_checked";
 
 export default function FacultyDashboard() {
+  const router = useRouter();
+  const [isDashboardVisible, setIsDashboardVisible] = useState<boolean | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkDashboardVisibility() {
+      try {
+        const isVisible = await isFacultyDashboardVisible();
+        setIsDashboardVisible(isVisible);
+
+        // Store the result in localStorage for the dashboard redirect
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            DASHBOARD_CHECK_KEY,
+            isVisible ? "true" : "false"
+          );
+        }
+      } catch (error) {
+        console.error("Error checking dashboard visibility:", error);
+        setIsDashboardVisible(true); // Default to visible in case of error
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkDashboardVisibility();
+  }, []);
+
+  // Intercept navigation to dashboard
+  useEffect(() => {
+    // Find the original handler for the dashboard button
+    const handleNavigation = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const dashboardButton = target.closest('a[href^="/faculty/dashboard"]');
+
+      if (dashboardButton && isDashboardVisible === false) {
+        e.preventDefault();
+        console.log(
+          "Intercepted click to dashboard - redirecting to disabled page"
+        );
+        fetch("/api/faculty/redirect-handler", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ destination: "/faculty/dashboard-disabled" }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              router.push("/faculty/dashboard-disabled");
+            }
+          })
+          .catch((error) => {
+            console.error("Error in redirect:", error);
+            router.push("/faculty/dashboard-disabled");
+          });
+      }
+    };
+
+    // Add event listener
+    if (isDashboardVisible !== null) {
+      document.addEventListener("click", handleNavigation);
+    }
+
+    // Clean up
+    return () => {
+      document.removeEventListener("click", handleNavigation);
+    };
+  }, [isDashboardVisible, router]);
+
   return (
     <div
       className="min-h-svh bg-cover bg-center"
