@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
 import { signOut } from "next-auth/react";
+import gsap from "gsap";
 import {
   FacultySubject,
   Question,
@@ -41,6 +42,8 @@ const FacultyFeedbackPage = () => {
   const [showRemarks, setShowRemarks] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [transitioning, setTransitioning] = useState<boolean>(false);
+  const slideRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -136,28 +139,69 @@ const FacultyFeedbackPage = () => {
     });
   };
 
+  const animateSlide = (direction: 'next' | 'prev') => {
+    if (!slideRef.current || transitioning) return;
+    
+    setTransitioning(true);
+    
+    // Starting position
+    gsap.set(slideRef.current, { 
+      x: direction === 'next' ? 0 : 0,
+      opacity: 1
+    });
+    
+    // Animate out
+    gsap.to(slideRef.current, {
+      x: direction === 'next' ? -50 : 50,
+      opacity: 0,
+      duration: 0.3,
+      onComplete: () => {
+        // Update the slide
+        if (direction === 'next') {
+          if (currentIndex >= facultySubjects.length - 1) {
+            setShowRemarks(true);
+          } else {
+            setCurrentIndex((prevIndex) => prevIndex + 1);
+          }
+        } else {
+          if (showRemarks) {
+            setShowRemarks(false);
+          } else if (currentIndex > 0) {
+            setCurrentIndex((prevIndex) => prevIndex - 1);
+          }
+        }
+        
+        // Reset position for animation in
+        gsap.set(slideRef.current, { 
+          x: direction === 'next' ? 50 : -50,
+          opacity: 0
+        });
+        
+        // Animate in
+        gsap.to(slideRef.current, {
+          x: 0,
+          opacity: 1,
+          duration: 0.3,
+          onComplete: () => {
+            setTransitioning(false);
+          }
+        });
+      }
+    });
+  };
+
   const handleNext = () => {
     // Validate that all questions are answered
     if (!isCurrentSlideComplete()) {
       alert("Please fill in all ratings before proceeding.");
       return;
     }
-
-    // If we've reached the end of faculty subjects, show remarks
-    if (currentIndex >= facultySubjects.length - 1) {
-      setShowRemarks(true);
-    } else {
-      // Otherwise move to the next faculty
-      setCurrentIndex((prevIndex) => prevIndex + 1);
-    }
+    
+    animateSlide('next');
   };
 
   const handlePrevious = () => {
-    if (showRemarks) {
-      setShowRemarks(false);
-    } else if (currentIndex > 0) {
-      setCurrentIndex((prevIndex) => prevIndex - 1);
-    }
+    animateSlide('prev');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,7 +222,8 @@ const FacultyFeedbackPage = () => {
         "Please complete all questions for all faculty members before submitting."
       );
       // Go back to first incomplete slide
-      for (let i = 0; i < facultySubjects.length; i++) {
+      for (let i =
+        0; i < facultySubjects.length; i++) {
         const slideResponses = allResponses[i];
         const isIncomplete = Object.entries(slideResponses).some(
           ([questionId, value]) => {
@@ -188,8 +233,9 @@ const FacultyFeedbackPage = () => {
         );
 
         if (isIncomplete) {
-          setCurrentIndex(i);
+          // Use an immediate transition without animation for error cases
           setShowRemarks(false);
+          setCurrentIndex(i);
           return;
         }
       }
@@ -334,7 +380,10 @@ const FacultyFeedbackPage = () => {
           Welcome {studentName}!
         </h1>
 
-        <div className="bg-gray-200 rounded-lg shadow-lg overflow-hidden mb-10">
+        <div 
+          ref={slideRef} 
+          className="bg-gray-200 rounded-lg shadow-lg overflow-hidden mb-10"
+        >
           {!showRemarks ? (
             <>
               <h2 className="text-xl font-semibold text-center p-6 bg-gray-700 text-white">
@@ -405,7 +454,8 @@ const FacultyFeedbackPage = () => {
         <div className="flex justify-between items-center">
           <button
             onClick={handlePrevious}
-            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 ${
+            disabled={transitioning || (currentIndex === 0 && !showRemarks)}
+            className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 disabled:opacity-50 ${
               currentIndex === 0 && !showRemarks ? "invisible" : ""
             }`}
           >
@@ -415,7 +465,7 @@ const FacultyFeedbackPage = () => {
           {showRemarks ? (
             <button
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || transitioning}
               className="bg-[#f03e65] hover:bg-[#d03050] text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50"
             >
               {submitting ? "Submitting..." : "Submit Feedback"}
@@ -423,7 +473,7 @@ const FacultyFeedbackPage = () => {
           ) : (
             <button
               onClick={handleNext}
-              disabled={!isCurrentSlideComplete()}
+              disabled={!isCurrentSlideComplete() || transitioning}
               className="bg-[#f03e65] hover:bg-[#d03050] text-white font-bold py-3 px-8 rounded-lg disabled:opacity-50"
             >
               Next Slide
