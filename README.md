@@ -162,6 +162,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - Configure system settings
 - Access all feedback data
 
+### 5. Guest
+
+- Submit curriculum feedback
+
 ## Database Schema
 
 The main entities in the database include:
