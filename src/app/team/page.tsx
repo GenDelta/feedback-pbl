@@ -80,7 +80,7 @@ const Team = () => {
           {/* 2nd Maintenance Team */}
           <div>
             <h2 className="text-xl text-white mb-2">
-              2nd Maintenance Team (23-27 Batch):
+              2nd Maintenance and Redesign Team (23-27 Batch):
             </h2>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               <a

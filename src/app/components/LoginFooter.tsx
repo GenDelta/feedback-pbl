@@ -13,7 +13,7 @@ const LoginFooter = () => {
         </div>
         <div className="text-gray-200 text-right font-poppins">
           <div>
-            Developed by Team: Mitiksha Paliwal, Tanvee Patil, Ankush Dutta
+            Redesigned by Team: Ankush Dutta, Mitiksha Paliwal, Tanvee Patil
           </div>
         </div>
       </div>
