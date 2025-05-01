@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import DownloadCard from "./DownloadCard";
 import {
   getCurrentCoordinatorBranch,
-  getStudentsWithoutFeedback, // Changed from getStudentsWithoutCurriculumFeedback
+  getStudentsWithoutCurriculumFeedback, // Changed to the correct function
   convertStudentsWithoutFeedbackToCSV,
   getCurriculumFeedbackByBranch,
   convertCurriculumFeedbackToCSV,
@@ -20,6 +20,7 @@ const CurriculumFeedback: React.FC = () => {
 
       // Get the coordinator's branch
       const branch = await getCurrentCoordinatorBranch();
+      console.log("Coordinator branch:", branch);
 
       if (!branch) {
         alert("Could not determine your branch. Please contact support.");
@@ -27,7 +28,11 @@ const CurriculumFeedback: React.FC = () => {
       }
 
       // Get students who haven't submitted curriculum feedback
-      const students = await getStudentsWithoutFeedback(branch);
+      // Changed to use the correct function for curriculum feedback
+      const students = await getStudentsWithoutCurriculumFeedback(branch);
+      console.log(
+        `Found ${students.length} students without curriculum feedback`
+      );
 
       if (students.length === 0) {
         alert(
@@ -35,6 +40,13 @@ const CurriculumFeedback: React.FC = () => {
         );
         return;
       }
+
+      // Log student details for debugging
+      students.forEach((student, index) => {
+        console.log(
+          `Student ${index + 1}: ${student.name}, PRN: ${student.prn}`
+        );
+      });
 
       // Convert to CSV and download
       const csvData = await convertStudentsWithoutFeedbackToCSV(students);

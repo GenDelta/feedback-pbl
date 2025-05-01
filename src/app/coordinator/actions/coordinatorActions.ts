@@ -956,6 +956,10 @@ export async function getStudentsWithoutCurriculumFeedback(
   branch: string
 ): Promise<StudentWithoutFeedback[]> {
   try {
+    console.log(
+      `Fetching students without curriculum feedback for branch: ${branch}`
+    );
+
     // Get all students from the specified branch
     const students = await prisma.user.findMany({
       where: {
@@ -969,6 +973,12 @@ export async function getStudentsWithoutCurriculumFeedback(
               where: {
                 faculty_ID: null, // Curriculum feedback has no faculty
                 subject_ID: null, // Curriculum feedback has no subject
+                // Fixed property name from feedback_name to feedbackName
+                feedbackName: {
+                  name: {
+                    contains: "Curriculum Feedback",
+                  },
+                },
               },
             },
           },
@@ -979,13 +989,18 @@ export async function getStudentsWithoutCurriculumFeedback(
       },
     });
 
+    console.log(`Total students in branch ${branch}: ${students.length}`);
+
     // Filter for students without curriculum feedback submissions
-    return students
-      .filter(
-        (user) =>
-          user.student &&
-          (!user.student.feedbacks || user.student.feedbacks.length === 0)
-      )
+    const studentsWithoutFeedback = students
+      .filter((user) => {
+        const hasFeedbacks =
+          user.student?.feedbacks && user.student.feedbacks.length > 0;
+        console.log(
+          `Student: ${user.name}, Has curriculum feedback: ${hasFeedbacks}`
+        );
+        return user.student && !hasFeedbacks;
+      })
       .map((user) => {
         return {
           id: user.id,
@@ -995,6 +1010,11 @@ export async function getStudentsWithoutCurriculumFeedback(
           semester: user.student?.semester || 0,
         };
       });
+
+    console.log(
+      `Students without curriculum feedback: ${studentsWithoutFeedback.length}`
+    );
+    return studentsWithoutFeedback;
   } catch (error) {
     console.error(
       "Error fetching students without curriculum feedback:",
