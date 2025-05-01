@@ -422,7 +422,7 @@ export async function getFeedbackByBranch(
       }
 
       // Add this answer to the group
-      feedbackGroups[groupKey].answers[`Q${feedback.question.question}`] =
+      feedbackGroups[groupKey].answers[`${feedback.question.question}`] =
         feedback.answer;
     }
 
