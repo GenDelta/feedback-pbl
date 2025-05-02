@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   getAllSubjects,
@@ -9,10 +9,12 @@ import {
 } from "../actions/coordinatorActions";
 import Header from "../components/Header";
 import Footer from "@/app/components/Footer";
+import Fuse from "fuse.js";
 
 export default function ViewSubjects() {
   const router = useRouter();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,29 +22,60 @@ export default function ViewSubjects() {
   const [nameSearch, setNameSearch] = useState<string>("");
   const [typeSearch, setTypeSearch] = useState<string>("");
   const [batchSearch, setBatchSearch] = useState<string>("");
+  const [facultySearch, setFacultySearch] = useState<string>("");
 
-  // Create memoized search function to avoid dependency issues
-  const performSearch = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Pass the trimmed search terms to avoid issues with whitespace
-      const results = await searchSubjects(
-        nameSearch.trim(),
-        typeSearch.trim(),
-        batchSearch.trim()
-      );
-      setSubjects(results);
-    } catch (error) {
-      console.error("Error during search:", error);
-      setError("Failed to search subjects. Please try again.");
-      setSubjects([]);
-    } finally {
-      setLoading(false);
+  // Initialize Fuse instance with configuration for fuzzy searching
+  const fuse = useMemo(() => {
+    return new Fuse(allSubjects, {
+      keys: ["name", "type", "batch", "facultyName"],
+      threshold: 0.3, // Lower threshold means more strict matching
+      includeScore: true,
+      ignoreLocation: true,
+      useExtendedSearch: true,
+    });
+  }, [allSubjects]);
+
+  // Perform search using Fuse.js
+  const performSearch = useCallback(() => {
+    if (!nameSearch && !typeSearch && !batchSearch && !facultySearch) {
+      setFilteredSubjects(allSubjects);
+      return;
     }
-  }, [nameSearch, typeSearch, batchSearch]);
 
-  // Debounce search to prevent excessive database calls
+    // Create an array for our search criteria
+    const searchItems = [];
+
+    // Only add non-empty search criteria
+    if (nameSearch) {
+      searchItems.push({ name: nameSearch });
+    }
+
+    if (typeSearch) {
+      searchItems.push({ type: typeSearch });
+    }
+
+    if (batchSearch) {
+      searchItems.push({ batch: batchSearch });
+    }
+
+    if (facultySearch) {
+      searchItems.push({ facultyName: facultySearch });
+    }
+
+    // If we have search criteria, apply them
+    if (searchItems.length > 0) {
+      // Use simpler search pattern structure
+      const results = fuse.search({
+        $and: searchItems,
+      });
+
+      setFilteredSubjects(results.map((result) => result.item));
+    } else {
+      setFilteredSubjects(allSubjects);
+    }
+  }, [nameSearch, typeSearch, batchSearch, facultySearch, fuse, allSubjects]);
+
+  // Debounce search to prevent excessive calculations
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       performSearch();
@@ -57,9 +90,11 @@ export default function ViewSubjects() {
       setLoading(true);
       try {
         const data = await getAllSubjects();
-        setSubjects(data);
+        setAllSubjects(data);
+        setFilteredSubjects(data);
       } catch (error) {
         console.error("Failed to load subjects:", error);
+        setError("Failed to load subjects. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -83,8 +118,8 @@ export default function ViewSubjects() {
           </button>
         </div>
 
-        {/* Search filters with better spacing */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Search filters with better spacing - now in a 2x2 grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div>
             <label
               htmlFor="nameSearch"
@@ -121,6 +156,23 @@ export default function ViewSubjects() {
 
           <div>
             <label
+              htmlFor="facultySearch"
+              className="block text-sm font-medium mb-1 text-gray-300"
+            >
+              Faculty Name
+            </label>
+            <input
+              id="facultySearch"
+              type="text"
+              placeholder="Search for faculty..."
+              className="bg-gray-800 border border-gray-700 text-white rounded-md px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={facultySearch}
+              onChange={(e) => setFacultySearch(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label
               htmlFor="batchSearch"
               className="block text-sm font-medium mb-1 text-gray-300"
             >
@@ -144,15 +196,22 @@ export default function ViewSubjects() {
           </div>
         )}
 
+        {/* Search results counter */}
+        <div className="text-gray-300 mb-4">
+          Found {filteredSubjects.length} subject
+          {filteredSubjects.length !== 1 ? "s" : ""}
+        </div>
+
         {/* Subjects Table with improved column spacing */}
         <div className="overflow-auto rounded-lg shadow mb-6">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-800 text-left">
-                <th className="p-4 pl-6 border-b border-gray-700 w-1/2">
+                <th className="p-4 pl-6 border-b border-gray-700 w-1/4">
                   Name
                 </th>
                 <th className="p-4 border-b border-gray-700 w-1/4">Type</th>
+                <th className="p-4 border-b border-gray-700 w-1/4">Faculty</th>
                 <th className="p-4 pr-6 border-b border-gray-700 w-1/4">
                   Batch
                 </th>
@@ -161,16 +220,16 @@ export default function ViewSubjects() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="text-center p-6">
+                  <td colSpan={4} className="text-center p-6">
                     <div className="flex justify-center items-center space-x-2">
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
                       <span>Loading subjects...</span>
                     </div>
                   </td>
                 </tr>
-              ) : subjects.length === 0 ? (
+              ) : filteredSubjects.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="text-center p-6">
+                  <td colSpan={4} className="text-center p-6">
                     <div className="flex flex-col items-center">
                       <span className="text-lg">No subjects found</span>
                       <span className="text-sm text-gray-400 mt-1">
@@ -180,13 +239,14 @@ export default function ViewSubjects() {
                   </td>
                 </tr>
               ) : (
-                subjects.map((subject) => (
+                filteredSubjects.map((subject) => (
                   <tr
                     key={subject.id}
                     className="border-b border-gray-800 hover:bg-gray-800 transition-colors"
                   >
                     <td className="p-4 pl-6">{subject.name}</td>
                     <td className="p-4">{subject.type}</td>
+                    <td className="p-4">{subject.facultyName || "-"}</td>
                     <td className="p-4 pr-6">{subject.batch || "-"}</td>
                   </tr>
                 ))

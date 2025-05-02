@@ -39,6 +39,7 @@ export interface Subject {
   type: string;
   batch: string | null; // Changed from academicYear to batch to be more accurate
   feedbackName_ID: string | null;
+  facultyName: string | null; // Add facultyName field to the interface
 }
 
 // Function to fetch all subjects
@@ -53,6 +54,15 @@ export async function getAllSubjects(): Promise<Subject[]> {
         facultySubjects: {
           select: {
             batch: true,
+            faculty: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -66,59 +76,11 @@ export async function getAllSubjects(): Promise<Subject[]> {
           ? subject.facultySubjects[0].batch
           : null;
 
-      return {
-        id: subject.Subject_ID,
-        name: subject.name,
-        type: subject.type,
-        batch: batch,
-        feedbackName_ID: subject.feedbackName_ID,
-      };
-    });
-  } catch (error) {
-    console.error("Error fetching subjects:", error);
-    return [];
-  }
-}
-
-// Function to search subjects with filters - fixed for SQLite compatibility
-export async function searchSubjects(
-  nameQuery: string = "",
-  typeQuery: string = "",
-  batchQuery: string = ""
-): Promise<Subject[]> {
-  try {
-    // For SQLite, we'll do a simpler query without case-insensitive mode
-    // and filter more precisely in JavaScript
-    const subjects = await prisma.subject.findMany({
-      where: {
-        name: nameQuery
-          ? {
-              contains: nameQuery,
-            }
-          : undefined,
-        type: typeQuery
-          ? {
-              contains: typeQuery,
-            }
-          : undefined,
-      },
-      orderBy: {
-        name: "asc",
-      },
-      include: {
-        facultySubjects: {
-          select: {
-            batch: true,
-          },
-        },
-      },
-    });
-
-    // Transform and filter the results with case-insensitive filtering in JS
-    const transformedSubjects = subjects.map((subject) => {
-      const batch =
-        subject.facultySubjects.length > 0
-          ? subject.facultySubjects[0].batch
+      // Get faculty name from facultySubjects if available
+      const facultyName =
+        subject.facultySubjects.length > 0 &&
+        subject.facultySubjects[0].faculty?.user?.name
+          ? subject.facultySubjects[0].faculty.user.name
           : null;
 
       return {
@@ -127,26 +89,109 @@ export async function searchSubjects(
         type: subject.type,
         batch: batch,
         feedbackName_ID: subject.feedbackName_ID,
+        facultyName: facultyName,
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching subjects:", error);
+    return [];
+  }
+}
+
+// Function to search subjects with filters - updated to include fuzzy matching
+export async function searchSubjects(
+  nameQuery: string = "",
+  typeQuery: string = "",
+  batchQuery: string = "",
+  facultyQuery: string = ""
+): Promise<Subject[]> {
+  try {
+    // For SQLite, we'll do a simpler query without case-insensitive mode
+    // and filter more precisely in JavaScript
+    const subjects = await prisma.subject.findMany({
+      orderBy: {
+        name: "asc",
+      },
+      include: {
+        facultySubjects: {
+          select: {
+            batch: true,
+            faculty: {
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transform subjects to our interface format
+    const transformedSubjects = subjects.map((subject) => {
+      const batch =
+        subject.facultySubjects.length > 0
+          ? subject.facultySubjects[0].batch
+          : null;
+
+      // Get faculty name from facultySubjects if available
+      const facultyName =
+        subject.facultySubjects.length > 0 &&
+        subject.facultySubjects[0].faculty?.user?.name
+          ? subject.facultySubjects[0].faculty.user.name
+          : null;
+
+      return {
+        id: subject.Subject_ID,
+        name: subject.name,
+        type: subject.type,
+        batch: batch,
+        feedbackName_ID: subject.feedbackName_ID,
+        facultyName: facultyName,
       };
     });
 
-    // Apply additional case-insensitive filtering in JavaScript
-    // for more precise matching and to handle the batch filter
+    // If no search queries are provided, return all subjects
+    if (!nameQuery && !typeQuery && !batchQuery && !facultyQuery) {
+      return transformedSubjects;
+    }
+
+    // Simple fuzzy matching implementation for server-side filtering
+    // This will be enhanced with Fuse.js on the client side
     return transformedSubjects.filter((subject) => {
-      const nameMatch =
-        !nameQuery ||
-        subject.name.toLowerCase().includes(nameQuery.toLowerCase());
+      // Helper function for fuzzy matching
+      const fuzzyMatch = (text: string | null, query: string): boolean => {
+        if (!text || !query) return !query; // If no text but query exists, no match
 
-      const typeMatch =
-        !typeQuery ||
-        subject.type.toLowerCase().includes(typeQuery.toLowerCase());
+        text = text.toLowerCase();
+        query = query.toLowerCase();
 
-      const batchMatch =
-        !batchQuery ||
-        (subject.batch &&
-          subject.batch.toLowerCase().includes(batchQuery.toLowerCase()));
+        // Simple fuzzy algorithm - check if characters appear in sequence
+        let textIndex = 0;
+        for (let i = 0; i < query.length; i++) {
+          const char = query[i];
 
-      return nameMatch && typeMatch && batchMatch;
+          // Find this character in the text
+          const charIndex = text.indexOf(char, textIndex);
+          if (charIndex === -1) return false;
+
+          // Move text index forward
+          textIndex = charIndex + 1;
+        }
+
+        return true;
+      };
+
+      const nameMatch = !nameQuery || fuzzyMatch(subject.name, nameQuery);
+      const typeMatch = !typeQuery || fuzzyMatch(subject.type, typeQuery);
+      const batchMatch = !batchQuery || fuzzyMatch(subject.batch, batchQuery);
+      const facultyMatch =
+        !facultyQuery || fuzzyMatch(subject.facultyName, facultyQuery);
+
+      return nameMatch && typeMatch && batchMatch && facultyMatch;
     });
   } catch (error) {
     console.error("Error searching subjects:", error);
