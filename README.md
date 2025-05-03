@@ -187,6 +187,15 @@ The application uses Next.js API routes for authentication and server actions fo
 - `/api/auth/[...nextauth]`: Authentication endpoints
 - `/api/auth/logout`: Logout endpoint
 
+### Middleware
+
+The application uses Next.js middleware for:
+
+- Route protection based on user roles
+- Authentication verification
+- Redirecting unauthenticated users
+- Access control for different sections of the application
+
 Server actions are organized by role:
 
 - Student actions: Submitting feedback, checking submission status
