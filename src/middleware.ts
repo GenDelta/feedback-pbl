@@ -16,7 +16,7 @@ const protectedRoutes = {
 const publicRoutes = ["/", "/team", "/favicon.ico"];
 
 // API routes that don't require authentication check
-const publicApiRoutes = ["/api/auth"];
+const publicApiRoutes = ["/api/auth", "/api/seed"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

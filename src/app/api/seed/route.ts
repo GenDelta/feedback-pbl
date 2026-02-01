@@ -1,13 +1,11 @@
 import prisma from "@/prisma/client";
 import bcrypt from "bcryptjs";
 
-// Define interface for subjects
 interface SubjectData {
   name: string;
   type: string;
 }
 
-// Define interface for subject with ID
 interface Subject extends SubjectData {
   Subject_ID: string;
 }
@@ -16,10 +14,27 @@ async function GET() {
   try {
     console.log("Starting database seeding...");
 
-    // Hash password (1234) for all users
     const hashedPassword = await bcrypt.hash("1234", 10);
 
-    // Define branches and departments with the updated branch list
+    console.log("Setting up visibility controls...");
+    
+    const visibilitySettings = [
+      { Visibility_Name: "studentLogin", State: 1 },
+      { Visibility_Name: "facultyLogin", State: 1 },
+      { Visibility_Name: "coordinatorLogin", State: 1 },
+      { Visibility_Name: "adminLogin", State: 1 },
+      { Visibility_Name: "guestLogin", State: 1 },
+    ];
+
+    for (const setting of visibilitySettings) {
+      await prisma.visibility_State.upsert({
+        where: { Visibility_Name: setting.Visibility_Name },
+        update: { State: setting.State },
+        create: setting,
+      });
+      console.log(`✓ Visibility setting: ${setting.Visibility_Name} = ${setting.State === 1 ? 'enabled' : 'disabled'}`);
+    }
+
     const branches = ["CSE", "AIML", "ENTC", "MECH", "CIVIL", "RA"];
     const departments = [
       "Computer Science",
